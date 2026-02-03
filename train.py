@@ -16,7 +16,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # --- PATHS ---
 TRAIN_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/train"
-VAL_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/val"
+VAL_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/valid"
 
 EPOCHS = 30
 BATCH_SIZE = 32 # Efficient for H100
