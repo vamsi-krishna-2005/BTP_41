@@ -25,6 +25,9 @@ VAL_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/valid"
 EPOCHS = 30
 BATCH_SIZE = 4 # Efficient for H100
 
+scaler = torch.cuda.amp.GradScaler()
+
+
 def run_train():
     model = SwinUNet().to(device) if args.model == "swin" else UNet().to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
@@ -54,11 +57,16 @@ def run_train():
         with torch.no_grad():
             for imgs, masks, _ in val_loader:
                 imgs, masks = imgs.to(device), masks.to(device)
-                out = model(imgs)
-                v_loss += criterion(out, masks).item()
-                v_iou += get_miou(out, masks)
-                v_gaf += calculate_gaf(out)
-
+                with torch.cuda.amp.autocast():
+                    out = model(imgs)
+                    v_loss += criterion(out, masks).item()
+                    v_iou += get_miou(out, masks)
+                    v_gaf += calculate_gaf(out)
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+        optimizer.zero_grad(set_to_none=True)
+        
         metrics = {
             "epoch": epoch + 1,
             "train_loss": t_loss/len(train_loader),
