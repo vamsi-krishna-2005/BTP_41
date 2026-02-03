@@ -5,14 +5,14 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-class DeepGlobeDataset(Dataset):
-    def __init__(self, img_dir, mask_dir, size=224):
-        self.img_dir = img_dir
-        self.mask_dir = mask_dir
-        self.img_names = sorted([f for f in os.listdir(img_dir) if f.endswith('.jpg')])
+class UrbanLensDataset(Dataset):
+    def __init__(self, data_dir, size=224):
+        self.data_dir = data_dir
         self.size = size
         
-        # Color Mapping for DeepGlobe 7 classes
+        # Identify satellite images by suffix
+        self.img_names = sorted([f for f in os.listdir(data_dir) if f.endswith('_sat.jpg')])
+        
         self.color_map = {
             (0, 255, 255): 0,   # Urban
             (255, 255, 0): 1,   # Agriculture
@@ -26,7 +26,6 @@ class DeepGlobeDataset(Dataset):
     def _rgb_to_mask(self, rgb_mask):
         mask = np.zeros((rgb_mask.shape[0], rgb_mask.shape[1]), dtype=np.uint8)
         for color, class_id in self.color_map.items():
-            # Thresholding at 128 as per DeepGlobe standard to handle compression artifacts
             match = np.all(np.abs(rgb_mask - np.array(color)) < 128, axis=-1)
             mask[match] = class_id
         return mask
@@ -35,10 +34,15 @@ class DeepGlobeDataset(Dataset):
         return len(self.img_names)
 
     def __getitem__(self, idx):
-        name = self.img_names[idx]
-        img_path = os.path.join(self.img_dir, name)
-        # DeepGlobe masks usually have '_mask.png' suffix
-        mask_path = os.path.join(self.mask_dir, name.replace('_sat.jpg', '_mask.png'))
+        img_name = self.img_names[idx]
+        # Match mask: replace _sat.jpg with _mask.png
+        mask_name = img_name.replace('_sat.jpg', '_mask.png')
+        
+        img_path = os.path.join(self.data_dir, img_name)
+        mask_path = os.path.join(self.data_dir, mask_name)
+
+        if not os.path.exists(mask_path):
+            raise FileNotFoundError(f"Missing mask: {mask_path}")
 
         image = Image.open(img_path).convert("RGB").resize((self.size, self.size))
         mask_rgb = Image.open(mask_path).convert("RGB").resize((self.size, self.size), resample=Image.NEAREST)
@@ -46,4 +50,4 @@ class DeepGlobeDataset(Dataset):
         image = transforms.ToTensor()(image)
         mask = torch.from_numpy(self._rgb_to_mask(np.array(mask_rgb))).long()
 
-        return image, mask, name
+        return image, mask, img_name

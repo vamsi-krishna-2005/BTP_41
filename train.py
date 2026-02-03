@@ -1,32 +1,40 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from dataset import DeepGlobeDataset
+from dataset import UrbanLensDataset
 from models import UNet, SwinUNet
-from utils import get_miou, calculate_gaf, save_checkpoint, load_checkpoint
+from utils import get_miou, calculate_gaf, save_ckpt, load_ckpt
 import pandas as pd
+import argparse
+import os
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--model", type=str, default="swin")
+args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-EPOCHS = 30
-BATCH_SIZE = 8
 
-def run_train(model_type='swin'):
-    model = SwinUNet().to(device) if model_type == 'swin' else UNet().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+# --- PATHS ---
+TRAIN_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/train"
+VAL_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/val"
+
+EPOCHS = 30
+BATCH_SIZE = 32 # Efficient for H100
+
+def run_train():
+    model = SwinUNet().to(device) if args.model == "swin" else UNet().to(device)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
     criterion = nn.CrossEntropyLoss()
     
-    # LOAD DATA (Update these paths)
-    train_ds = DeepGlobeDataset("/home/jayadeepj/Desktop/Urbanlens/data/train/images", "/home/jayadeepj/Desktop/Urbanlens/data/train/masks")
-    val_ds = DeepGlobeDataset("/home/jayadeepj/Desktop/Urbanlens/data/val/images", "/home/jayadeepj/Desktop/Urbanlens/data/val/masks")
-    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
-    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE)
+    train_loader = DataLoader(UrbanLensDataset(TRAIN_DIR), batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
+    val_loader = DataLoader(UrbanLensDataset(VAL_DIR), batch_size=BATCH_SIZE, num_workers=4)
 
-    start_epoch = load_checkpoint(model, optimizer, model_type)
+    start_epoch = load_ckpt(model, optimizer, args.model)
     history = []
 
     for epoch in range(start_epoch, EPOCHS):
         model.train()
-        train_loss, train_iou = 0, 0
+        t_loss, t_iou = 0, 0
         for imgs, masks, _ in train_loader:
             imgs, masks = imgs.to(device), masks.to(device)
             optimizer.zero_grad()
@@ -34,35 +42,34 @@ def run_train(model_type='swin'):
             loss = criterion(out, masks)
             loss.backward()
             optimizer.step()
-            train_loss += loss.item()
-            train_iou += get_miou(out, masks)
+            t_loss += loss.item()
+            t_iou += get_miou(out, masks)
 
-        # Validation
         model.eval()
-        val_loss, val_iou, val_gaf = 0, 0, 0
+        v_loss, v_iou, v_gaf = 0, 0, 0
         with torch.no_grad():
             for imgs, masks, _ in val_loader:
                 imgs, masks = imgs.to(device), masks.to(device)
                 out = model(imgs)
-                val_loss += criterion(out, masks).item()
-                val_iou += get_miou(out, masks)
-                # Calculate GAF for first image in batch as sample
-                val_gaf += calculate_gaf(out[0])
+                v_loss += criterion(out, masks).item()
+                v_iou += get_miou(out, masks)
+                v_gaf += calculate_gaf(out)
 
         metrics = {
             "epoch": epoch + 1,
-            "train_loss": train_loss/len(train_loader),
-            "val_loss": val_loss/len(val_loader),
-            "train_mIoU": train_iou/len(train_loader),
-            "val_mIoU": val_iou/len(val_loader),
-            "avg_gaf": val_gaf/len(val_loader)
+            "train_loss": t_loss/len(train_loader),
+            "val_loss": v_loss/len(val_loader),
+            "train_mIoU": t_iou/len(train_loader),
+            "val_mIoU": v_iou/len(val_loader),
+            "avg_gaf": v_gaf/len(val_loader)
         }
         history.append(metrics)
-        print(f"Epoch {epoch+1} | Val mIoU: {metrics['val_mIoU']:.4f} | GAF: {metrics['avg_gaf']:.4f}")
+        print(f"[{args.model}] Ep {epoch+1} | T-Loss: {metrics['train_loss']:.4f} | V-mIoU: {metrics['val_mIoU']:.4f} | GAF: {metrics['avg_gaf']:.4f}")
         
-        save_checkpoint({'epoch': epoch+1, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, model_type)
-        pd.DataFrame(history).to_csv(f"results/{model_type}_metrics.csv", index=False)
+        save_ckpt({'epoch': epoch+1, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, args.model)
+        pd.DataFrame(history).to_csv(f"results/{args.model}_metrics.csv", index=False)
 
 if __name__ == "__main__":
-    run_train('unet')
-    run_train('swin')
+    os.makedirs("results", exist_ok=True)
+    os.makedirs("checkpoints", exist_ok=True)
+    run_train()
