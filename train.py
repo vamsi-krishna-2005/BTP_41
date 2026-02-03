@@ -16,8 +16,8 @@ def run_train(model_type='swin'):
     criterion = nn.CrossEntropyLoss()
     
     # LOAD DATA (Update these paths)
-    train_ds = DeepGlobeDataset("./data/train/images", "./data/train/masks")
-    val_ds = DeepGlobeDataset("./data/val/images", "./data/val/masks")
+    train_ds = DeepGlobeDataset("../data/train/images", "../data/train/masks")
+    val_ds = DeepGlobeDataset("../data/val/images", "../data/val/masks")
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE)
 
