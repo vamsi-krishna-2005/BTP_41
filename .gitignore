@@ -1,0 +1,12 @@
+config
+config/*.yaml
+logs
+checkpoints/*.pth
+__pycache__/
+*.pyc
+.DS_Store
+.vscode/
+env/
+env_*/
+.env
+*.log
