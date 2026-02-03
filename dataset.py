@@ -10,9 +10,22 @@ class UrbanLensDataset(Dataset):
         self.data_dir = data_dir
         self.size = size
         
-        # Identify satellite images by suffix
-        self.img_names = sorted([f for f in os.listdir(data_dir) if f.endswith('_sat.jpg')])
+        # 1. Get all files in the directory once
+        all_files = set(os.listdir(data_dir))
         
+        # 2. Only include satellite images if the corresponding mask exists
+        self.img_names = []
+        for f in all_files:
+            if f.endswith('_sat.jpg'):
+                mask_name = f.replace('_sat.jpg', '_mask.png')
+                if mask_name in all_files:
+                    self.img_names.append(f)
+        
+        self.img_names.sort()
+        
+        if len(self.img_names) == 0:
+            print(f"Warning: No valid image-mask pairs found in {data_dir}")
+
         self.color_map = {
             (0, 255, 255): 0,   # Urban
             (255, 255, 0): 1,   # Agriculture
@@ -35,14 +48,10 @@ class UrbanLensDataset(Dataset):
 
     def __getitem__(self, idx):
         img_name = self.img_names[idx]
-        # Match mask: replace _sat.jpg with _mask.png
         mask_name = img_name.replace('_sat.jpg', '_mask.png')
         
         img_path = os.path.join(self.data_dir, img_name)
         mask_path = os.path.join(self.data_dir, mask_name)
-
-        if not os.path.exists(mask_path):
-            raise FileNotFoundError(f"Missing mask: {mask_path}")
 
         image = Image.open(img_path).convert("RGB").resize((self.size, self.size))
         mask_rgb = Image.open(mask_path).convert("RGB").resize((self.size, self.size), resample=Image.NEAREST)
