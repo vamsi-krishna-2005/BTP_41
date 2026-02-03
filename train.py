@@ -8,6 +8,10 @@ import pandas as pd
 import argparse
 import os
 
+torch.backends.cudnn.benchmark = False
+torch.backends.cudnn.deterministic = True
+torch.cuda.empty_cache()
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str, default="swin")
 args = parser.parse_args()
@@ -19,7 +23,7 @@ TRAIN_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/train"
 VAL_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/valid"
 
 EPOCHS = 30
-BATCH_SIZE = 16 # Efficient for H100
+BATCH_SIZE = 4 # Efficient for H100
 
 def run_train():
     model = SwinUNet().to(device) if args.model == "swin" else UNet().to(device)
