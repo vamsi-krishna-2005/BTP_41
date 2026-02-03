@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from dataset import UrbanLensDataset
 from models import UNet, SwinUNet
-from utils import get_miou, calculate_gaf, save_ckpt, load_ckpt
+from utils import get_miou, calculate_gaf, save_checkpoint, load_checkpoint
 import pandas as pd
 import argparse
 import os
@@ -29,7 +29,7 @@ def run_train():
     train_loader = DataLoader(UrbanLensDataset(TRAIN_DIR), batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
     val_loader = DataLoader(UrbanLensDataset(VAL_DIR), batch_size=BATCH_SIZE, num_workers=4)
 
-    start_epoch = load_ckpt(model, optimizer, args.model)
+    start_epoch = load_checkpoint(model, optimizer, args.model)
     history = []
 
     for epoch in range(start_epoch, EPOCHS):
@@ -66,7 +66,7 @@ def run_train():
         history.append(metrics)
         print(f"[{args.model}] Ep {epoch+1} | T-Loss: {metrics['train_loss']:.4f} | V-mIoU: {metrics['val_mIoU']:.4f} | GAF: {metrics['avg_gaf']:.4f}")
         
-        save_ckpt({'epoch': epoch+1, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, args.model)
+        save_checkpoint({'epoch': epoch+1, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, args.model)
         pd.DataFrame(history).to_csv(f"results/{args.model}_metrics.csv", index=False)
 
 if __name__ == "__main__":
