@@ -19,15 +19,15 @@ TRAIN_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/train"
 VAL_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/valid"
 
 EPOCHS = 30
-BATCH_SIZE = 32 # Efficient for H100
+BATCH_SIZE = 16 # Efficient for H100
 
 def run_train():
     model = SwinUNet().to(device) if args.model == "swin" else UNet().to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
     criterion = nn.CrossEntropyLoss()
     
-    train_loader = DataLoader(UrbanLensDataset(TRAIN_DIR), batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
-    val_loader = DataLoader(UrbanLensDataset(VAL_DIR), batch_size=BATCH_SIZE, num_workers=0)
+    train_loader = DataLoader(UrbanLensDataset(TRAIN_DIR), batch_size=BATCH_SIZE, shuffle=True, num_workers=0, pin_memory=False)
+    val_loader = DataLoader(UrbanLensDataset(VAL_DIR), batch_size=BATCH_SIZE, num_workers=0, pin_memory=False)
 
     start_epoch = load_checkpoint(model, optimizer, args.model)
     history = []
