@@ -33,13 +33,26 @@ class SwinUNet(nn.Module):
     def __init__(self, n_classes=7):
         super().__init__()
         self.backbone = timm.create_model("swin_tiny_patch4_window7_224", pretrained=True, features_only=True)
+        
+        # Decoder blocks
         self.up1 = nn.ConvTranspose2d(768, 384, 2, stride=2)
         self.up2 = nn.ConvTranspose2d(384, 192, 2, stride=2)
         self.up3 = nn.ConvTranspose2d(192, 96, 2, stride=2)
-        self.final = nn.Sequential(nn.Conv2d(96, n_classes, 1), nn.Upsample(scale_factor=4, mode='bilinear'))
+        
+        self.final = nn.Sequential(
+            nn.Conv2d(96, n_classes, 1),
+            nn.Upsample(scale_factor=4, mode='bilinear')
+        )
+
     def forward(self, x):
-        f = self.backbone(x)
+        # f0: [B, 56, 56, 96], f1: [B, 28, 28, 192], f2: [B, 14, 14, 384], f3: [B, 7, 7, 768]
+        f = self.backbone(x) 
+
+        # Fix: Rearrange from [B, H, W, C] to [B, C, H, W] for the decoder
+        f = [feat.permute(0, 3, 1, 2).contiguous() for feat in f]
+
         d1 = self.up1(f[3])
         d2 = self.up2(d1 + f[2])
         d3 = self.up3(d2 + f[1])
+        
         return self.final(d3)
