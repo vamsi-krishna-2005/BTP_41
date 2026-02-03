@@ -14,6 +14,7 @@ torch.cuda.empty_cache()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str, default="swin")
+parser.add_argument("--resume", action="store_true", default=False)
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -36,7 +37,7 @@ def run_train():
     train_loader = DataLoader(UrbanLensDataset(TRAIN_DIR), batch_size=BATCH_SIZE, shuffle=True, num_workers=2, pin_memory=True, persistent_workers=True)
     val_loader = DataLoader(UrbanLensDataset(VAL_DIR), batch_size=BATCH_SIZE, num_workers=2, pin_memory=True, persistent_workers=True)
 
-    start_epoch = load_checkpoint(model, optimizer, args.model)
+    start_epoch = load_checkpoint(model, optimizer, args.model, args.resume)
     history = []
 
     for epoch in range(start_epoch, EPOCHS):

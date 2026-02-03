@@ -29,10 +29,10 @@ def save_checkpoint(state, model_name):
     path = f"checkpoints/{model_name}_latest.pth"
     torch.save(state, path)
 
-def load_checkpoint(model, optimizer, model_name):
+def load_checkpoint(model, optimizer, model_name , resume=True):
     path = f"checkpoints/{model_name}_latest.pth"
-    if os.path.exists(path):
-        ckpt = torch.load(path)
+    if os.path.exists(path) and resume:
+        ckpt = torch.load(path, weights_only=False)
         model.load_state_dict(ckpt['state_dict'])
         optimizer.load_state_dict(ckpt['optimizer'])
         return ckpt['epoch']
