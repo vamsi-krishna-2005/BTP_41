@@ -4,9 +4,13 @@ from dataset import UrbanLensDataset
 from models import UNet, SwinUNet
 from train import VAL_DIR
 from utils import calculate_gaf, get_miou
+import matplotlib.colors as mcolors
+from matplotlib.patches import Patch
+
 
 device = torch.device("cuda")
 TEST_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/test"
+
 
 CLASS_NAMES = {
     0: "Urban",
@@ -19,18 +23,32 @@ CLASS_NAMES = {
 }
 
 CLASS_COLORS = {
-    0: "red",
-    1: "yellow",
-    2: "cyan",
-    3: "green",
-    4: "blue",
-    5: "brown",
-    6: "gray"
+    0: (220/255, 20/255, 60/255),    # Urban - red
+    1: (255/255, 215/255, 0/255),    # Agriculture - yellow
+    2: (0/255, 255/255, 255/255),    # Rangeland - cyan
+    3: (34/255, 139/255, 34/255),    # Forest - green
+    4: (30/255, 144/255, 255/255),   # Water - blue
+    5: (139/255, 69/255, 19/255),    # Barren - brown
+    6: (128/255, 128/255, 128/255)   # Unknown - gray
 }
+
 
 def get_present_classes(mask):
     unique = torch.unique(mask).cpu().numpy().tolist()
     return [(cls, CLASS_NAMES[cls]) for cls in unique]
+
+CLASS_CMAP = mcolors.ListedColormap(
+    [CLASS_COLORS[i] for i in range(len(CLASS_COLORS))]
+)
+
+
+def create_class_legend(present_classes):
+    legend_elements = []
+    for cls, name in present_classes:
+        legend_elements.append(
+            Patch(facecolor=CLASS_COLORS[cls], label=f"{cls}: {name}")
+        )
+    return legend_elements
 
 
 def generate_report(idx=0):
@@ -72,30 +90,28 @@ def generate_report(idx=0):
     axes[0].imshow(img.permute(1,2,0))
     axes[0].set_title(f"Input: {name}")
 
-    axes[1].imshow(mask, cmap='tab10')
+    axes[1].imshow(mask, cmap=CLASS_CMAP)
     axes[1].set_title(f"Ground Truth\nGAF: {gaf_gt:.4f}")
 
     pred_u = torch.argmax(out_u[0], 0).cpu()
-    axes[2].imshow(pred_u, cmap='tab10')
+    axes[2].imshow(pred_u, cmap=CLASS_CMAP)
     axes[2].set_title(f"U-Net\nmIoU: {iou_u:.3f} | GAF: {gaf_u:.4f}")
 
     pred_s = torch.argmax(out_s[0], 0).cpu()
-    axes[3].imshow(pred_s, cmap='tab10')
+    axes[3].imshow(pred_s, cmap=CLASS_CMAP)
     axes[3].set_title(f"Swin-UNet\nmIoU: {iou_s:.3f} | GAF: {gaf_s:.4f}")
 
     present_classes = get_present_classes(mask)
+    legend_elements = create_class_legend(present_classes)
 
-    legend_text = "\n".join(
-        [f"{cls}: {name}" for cls, name in present_classes]
-    )
-
-    plt.gcf().text(
-        0.01, 0.5,
-        f"Classes Present:\n{legend_text}",
+    fig.legend(
+        handles=legend_elements,
+        loc="lower center",
+        ncol=len(legend_elements),
         fontsize=10,
-        verticalalignment='center',
-        bbox=dict(boxstyle="round", facecolor="white", alpha=0.8)
+        frameon=True
     )
+
 
     plt.tight_layout()
     plt.savefig(f"results/final_comparison_No_Albumentation_{idx}.png")
