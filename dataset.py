@@ -4,11 +4,14 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
+from albumentations.pytorch import ToTensorV2
+
 
 class UrbanLensDataset(Dataset):
-    def __init__(self, data_dir, size=224):
+    def __init__(self, data_dir, size=224, transform=None):
         self.data_dir = data_dir
         self.size = size
+        self.transform = transform
         
         # 1. Get all files in the directory once
         all_files = set(os.listdir(data_dir))
@@ -55,6 +58,15 @@ class UrbanLensDataset(Dataset):
 
         image = Image.open(img_path).convert("RGB").resize((self.size, self.size))
         mask_rgb = Image.open(mask_path).convert("RGB").resize((self.size, self.size), resample=Image.NEAREST)
+
+        if self.transform:
+            augmented = self.transform(image=image, mask=mask_rgb)
+            image = augmented["image"]
+            mask = augmented["mask"]
+        else:
+            image = ToTensorV2()(image=image)["image"]
+            mask = torch.from_numpy(self._rgb_to_mask(np.array(mask_rgb))).long()
+
         
         image = transforms.ToTensor()(image)
         mask = torch.from_numpy(self._rgb_to_mask(np.array(mask_rgb))).long()

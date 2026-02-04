@@ -7,6 +7,8 @@ from utils import get_miou, calculate_gaf, save_checkpoint, load_checkpoint
 import pandas as pd
 import argparse
 import os
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
 
 torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
@@ -31,13 +33,47 @@ BATCH_SIZE = 4 # Efficient for H100
 scaler = torch.amp.GradScaler("cuda")
 
 
+
+train_transform = A.Compose([
+    A.HorizontalFlip(p=0.5),
+    A.VerticalFlip(p=0.5),
+    A.RandomRotate90(p=0.5),
+
+    A.ShiftScaleRotate(
+        shift_limit=0.05,
+        scale_limit=0.1,
+        rotate_limit=15,
+        p=0.5
+    ),
+
+    A.ColorJitter(
+        brightness=0.2,
+        contrast=0.2,
+        saturation=0.2,
+        hue=0.05,
+        p=0.5
+    ),
+
+    A.Normalize(mean=(0.485, 0.456, 0.406),
+                std=(0.229, 0.224, 0.225)),
+
+    ToTensorV2()
+])
+
+val_transform = A.Compose([
+    A.Normalize(mean=(0.485, 0.456, 0.406),
+                std=(0.229, 0.224, 0.225)),
+    ToTensorV2()
+])
+
+
 def run_train():
     model = SwinUNet().to(device) if args.model == "swin" else UNet().to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
     criterion = nn.CrossEntropyLoss()
     
-    train_loader = DataLoader(UrbanLensDataset(TRAIN_DIR), batch_size=BATCH_SIZE, shuffle=True, num_workers=2, pin_memory=True, persistent_workers=True)
-    val_loader = DataLoader(UrbanLensDataset(VAL_DIR), batch_size=BATCH_SIZE, num_workers=2, pin_memory=True, persistent_workers=True)
+    train_loader = DataLoader(UrbanLensDataset(TRAIN_DIR, transform=train_transform), batch_size=BATCH_SIZE, shuffle=True, num_workers=2, pin_memory=True, persistent_workers=True)
+    val_loader = DataLoader(UrbanLensDataset(VAL_DIR, transform=val_transform), batch_size=BATCH_SIZE, num_workers=2, pin_memory=True, persistent_workers=True)
 
     start_epoch = load_checkpoint(model, optimizer, args.model, args.resume)
     history = []
@@ -81,7 +117,7 @@ def run_train():
         print(f"[{args.model}] Ep {epoch+1} | T-Loss: {metrics['train_loss']:.4f} | V-mIoU: {metrics['val_mIoU']:.4f} | GAF: {metrics['avg_gaf']:.4f}")
         
         save_checkpoint({'epoch': epoch+1, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, args.model)
-        pd.DataFrame(history).to_csv(f"results/{args.model}_metrics.csv", index=False)
+        pd.DataFrame(history).to_csv(f"results/Albumented_{args.model}_metrics.csv", index=False)
 
 if __name__ == "__main__":
     os.makedirs("results", exist_ok=True)
