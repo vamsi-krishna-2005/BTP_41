@@ -1,4 +1,4 @@
-import matlotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import torch
 import pandas as pd
 
@@ -39,10 +39,10 @@ def plot_metrics(history, model_name):
     plt.legend()
     
     plt.tight_layout()
-    plt.show()
+    plt.savefig(f"results/Metrics_visual_before_albumentation {model_name}")
 
 
-unet_history = pd.read_csv('results/unet_history.csv').to_dict('records')
-swin_history = pd.read_csv('results/swin_history.csv').to_dict('records')
+unet_history = pd.read_csv('results/unet_metrics.csv').to_dict('records')
+swin_history = pd.read_csv('results/swin_metrics.csv').to_dict('records')
 plot_metrics(unet_history, 'U-Net')
 plot_metrics(swin_history, 'Swin-UNet')
