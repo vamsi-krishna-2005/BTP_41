@@ -1,4 +1,5 @@
 import os
+from streamlit import image
 import torch
 import numpy as np
 from PIL import Image
@@ -52,23 +53,27 @@ class UrbanLensDataset(Dataset):
     def __getitem__(self, idx):
         img_name = self.img_names[idx]
         mask_name = img_name.replace('_sat.jpg', '_mask.png')
-        
+
         img_path = os.path.join(self.data_dir, img_name)
         mask_path = os.path.join(self.data_dir, mask_name)
 
+        # Load with PIL
         image = Image.open(img_path).convert("RGB").resize((self.size, self.size))
-        mask_rgb = Image.open(mask_path).convert("RGB").resize((self.size, self.size), resample=Image.NEAREST)
+        mask_rgb = Image.open(mask_path).convert("RGB").resize(
+            (self.size, self.size), resample=Image.NEAREST
+        )
+
+        # Convert to numpy (CRITICAL for Albumentations)
+        image = np.array(image)
+        mask_rgb = np.array(mask_rgb)
 
         if self.transform:
             augmented = self.transform(image=image, mask=mask_rgb)
-            image = augmented["image"]
-            mask = augmented["mask"]
+            image = augmented["image"]          # Tensor (C,H,W)
+            mask = augmented["mask"]            # Still RGB numpy
+            mask = torch.from_numpy(self._rgb_to_mask(mask)).long()
         else:
-            image = ToTensorV2()(image=image)["image"]
-            mask = torch.from_numpy(self._rgb_to_mask(np.array(mask_rgb))).long()
-
-        
-        image = transforms.ToTensor()(image)
-        mask = torch.from_numpy(self._rgb_to_mask(np.array(mask_rgb))).long()
+            image = transforms.ToTensor()(image)
+            mask = torch.from_numpy(self._rgb_to_mask(mask_rgb)).long()
 
         return image, mask, img_name

@@ -45,7 +45,7 @@ def get_present_classes(mask):
 
 
 def generate_report(idx=0):
-    ds = UrbanLensDataset(TEST_DIR)
+    ds = UrbanLensDataset(TEST_DIR, transform=None)
     img, mask, name = ds[idx]
 
     # Load models on CPU first
