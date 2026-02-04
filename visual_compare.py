@@ -8,6 +8,31 @@ from utils import calculate_gaf, get_miou
 device = torch.device("cuda")
 TEST_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/test"
 
+CLASS_NAMES = {
+    0: "Urban",
+    1: "Agriculture",
+    2: "Rangeland",
+    3: "Forest",
+    4: "Water",
+    5: "Barren",
+    6: "Unknown"
+}
+
+CLASS_COLORS = {
+    0: "red",
+    1: "yellow",
+    2: "cyan",
+    3: "green",
+    4: "blue",
+    5: "brown",
+    6: "gray"
+}
+
+def get_present_classes(mask):
+    unique = torch.unique(mask).cpu().numpy().tolist()
+    return [(cls, CLASS_NAMES[cls]) for cls in unique]
+
+
 def generate_report(idx=0):
     ds = UrbanLensDataset(TEST_DIR)
     img, mask, name = ds[idx]
@@ -57,6 +82,20 @@ def generate_report(idx=0):
     pred_s = torch.argmax(out_s[0], 0).cpu()
     axes[3].imshow(pred_s, cmap='tab10')
     axes[3].set_title(f"Swin-UNet\nmIoU: {iou_s:.3f} | GAF: {gaf_s:.4f}")
+
+    present_classes = get_present_classes(mask)
+
+    legend_text = "\n".join(
+        [f"{cls}: {name}" for cls, name in present_classes]
+    )
+
+    plt.gcf().text(
+        0.01, 0.5,
+        f"Classes Present:\n{legend_text}",
+        fontsize=10,
+        verticalalignment='center',
+        bbox=dict(boxstyle="round", facecolor="white", alpha=0.8)
+    )
 
     plt.tight_layout()
     plt.savefig(f"results/final_comparison_No_Albumentation_{idx}.png")
