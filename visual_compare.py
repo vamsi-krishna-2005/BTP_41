@@ -46,7 +46,7 @@ def generate_report(idx=0):
     axes[3].imshow(pred_s, cmap='tab10'); axes[3].set_title(f"Swin-Unet\nmIoU: {iou_s:.2f} | GAF: {gaf_s:.2f}")
     
     plt.tight_layout()
-    plt.savefig(f"results/final_comparison_{idx}.png")
+    plt.savefig(f"results/final_comparison_No_Albumentation_{idx}.png")
     print(f"Report saved for {name}")
 
 if __name__ == "__main__":
