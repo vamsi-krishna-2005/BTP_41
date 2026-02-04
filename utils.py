@@ -26,7 +26,7 @@ def calculate_gaf(mask):
     return score / total
 
 def save_checkpoint(state, model_name):
-    path = f"checkpoints/{model_name}_latest.pth"
+    path = f"checkpoints/Albumented_{model_name}_latest.pth" # this has been changed with respect to albumentaions version
     torch.save(state, path)
 
 def load_checkpoint(model, optimizer, model_name , resume=True):
