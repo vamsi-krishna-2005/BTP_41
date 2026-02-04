@@ -40,11 +40,16 @@ class UrbanLensDataset(Dataset):
         }
 
     def _rgb_to_mask(self, rgb_mask):
+        rgb_mask = np.array(rgb_mask)  # ensure numpy
         mask = np.zeros((rgb_mask.shape[0], rgb_mask.shape[1]), dtype=np.uint8)
+
         for color, class_id in self.color_map.items():
-            match = np.all(np.abs(rgb_mask - np.array(color)) < 128, axis=-1)
+            color = np.array(color)
+            match = np.all(rgb_mask == color, axis=-1)
             mask[match] = class_id
+
         return mask
+
 
     def __len__(self):
         return len(self.img_names)
@@ -56,23 +61,24 @@ class UrbanLensDataset(Dataset):
         img_path = os.path.join(self.data_dir, img_name)
         mask_path = os.path.join(self.data_dir, mask_name)
 
-        # Load with PIL
-        image = Image.open(img_path).convert("RGB").resize((self.size, self.size))
-        mask_rgb = Image.open(mask_path).convert("RGB").resize(
-            (self.size, self.size), resample=Image.NEAREST
+        image = np.array(
+            Image.open(img_path).convert("RGB").resize((self.size, self.size))
+        )
+        mask_rgb = np.array(
+            Image.open(mask_path)
+            .convert("RGB")
+            .resize((self.size, self.size), resample=Image.NEAREST)
         )
 
-        # Convert to numpy (CRITICAL for Albumentations)
-        image = np.array(image)
-        mask_rgb = np.array(mask_rgb)
+        mask = self._rgb_to_mask(mask_rgb)
 
         if self.transform:
-            augmented = self.transform(image=image, mask=mask_rgb)
-            image = augmented["image"]          # Tensor (C,H,W)
-            mask = augmented["mask"]            # Still RGB numpy
-            mask = torch.from_numpy(self._rgb_to_mask(mask)).long()
+            augmented = self.transform(image=image, mask=mask)
+            image = augmented["image"]
+            mask = augmented["mask"]
         else:
-            image = transforms.ToTensor()(image)
-            mask = torch.from_numpy(self._rgb_to_mask(mask_rgb)).long()
+            image = ToTensorV2()(image=image)["image"]
+            mask = torch.from_numpy(mask).long()
 
         return image, mask, img_name
+
