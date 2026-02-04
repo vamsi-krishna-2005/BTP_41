@@ -1,5 +1,4 @@
 import os
-from streamlit import image
 import torch
 import numpy as np
 from PIL import Image
