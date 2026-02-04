@@ -18,6 +18,8 @@ parser.add_argument("--resume", action="store_true", default=False)
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+print(f"Device name: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
 
 # --- PATHS ---
 TRAIN_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/train"
