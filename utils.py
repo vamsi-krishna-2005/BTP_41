@@ -30,7 +30,7 @@ def save_checkpoint(state, model_name):
     torch.save(state, path)
 
 def load_checkpoint(model, optimizer, model_name , resume=True):
-    path = f"checkpoints/{model_name}_latest.pth"
+    path = f"checkpoints/Albumented_{model_name}_latest.pth" # this can be changed with respect to albumentaions version
     if os.path.exists(path) and resume:
         ckpt = torch.load(path, weights_only=False)
         model.load_state_dict(ckpt['state_dict'])
