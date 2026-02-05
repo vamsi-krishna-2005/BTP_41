@@ -75,7 +75,7 @@ class UrbanLensDataset(Dataset):
         if self.transform:
             augmented = self.transform(image=image, mask=mask)
             image = augmented["image"]
-            mask = augmented["mask"]
+            mask = augmented["mask"].long()
         else:
             image = ToTensorV2()(image=image)["image"]
             mask = torch.from_numpy(mask).long()

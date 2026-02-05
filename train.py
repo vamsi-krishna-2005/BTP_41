@@ -29,9 +29,10 @@ VAL_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/valid"
 
 EPOCHS = 30
 BATCH_SIZE = 4 # Efficient for H100
+use_cuda = torch.cuda.is_available()
+use_amp = use_cuda
 
-scaler = torch.amp.GradScaler("cuda")
-
+scaler = torch.amp.GradScaler("cuda") if use_amp else None
 
 
 train_transform = A.Compose([
