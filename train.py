@@ -28,7 +28,12 @@ TRAIN_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/train"
 VAL_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/valid"
 
 EPOCHS = 30
-BATCH_SIZE = 4 # Efficient for H100
+BATCH_SIZE = 1
+ACCUMULATION_STEPS = 8   # effective batch = 8
+num_workers = 0
+pin_memory = True
+
+# BATCH_SIZE = 4 # Efficient for H100
 use_cuda = torch.cuda.is_available()
 use_amp = use_cuda
 
@@ -89,9 +94,12 @@ def run_train():
                 with torch.amp.autocast("cuda"):
                     out = model(imgs)
                     loss = criterion(out, masks)
+                    loss = loss/ACCUMULATION_STEPS
                 scaler.scale(loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
+                if (epoch + 1) % ACCUMULATION_STEPS == 0:
+                    scaler.step(optimizer)
+                    scaler.update()
+                    optimizer.zero_grad(set_to_none=True)
             else:
                 out = model(imgs)
                 loss = criterion(out, masks)
