@@ -22,6 +22,9 @@ device = torch.device("cuda" if use_cuda else "cpu")
 RUN_TAG = f"{args.model}_{'gpu' if use_cuda else 'cpu'}"
 CSV_PATH = f"results/Albumented_{RUN_TAG}_metrics.csv"
 
+TRAIN_DIR = 'data/train'
+VAL_DIR = 'data/valid'
+
 EPOCHS = 30
 BATCH_SIZE = 2
 ACCUMULATION_STEPS = 8  # effective batch = 16
