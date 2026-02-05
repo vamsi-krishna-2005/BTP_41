@@ -73,8 +73,8 @@ def run_train():
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
     criterion = nn.CrossEntropyLoss()
     
-    train_loader = DataLoader(UrbanLensDataset(TRAIN_DIR, transform=train_transform), batch_size=BATCH_SIZE, shuffle=True, num_workers=2, pin_memory=True, persistent_workers=True)
-    val_loader = DataLoader(UrbanLensDataset(VAL_DIR, transform=val_transform), batch_size=BATCH_SIZE, num_workers=2, pin_memory=True, persistent_workers=True)
+    train_loader = DataLoader(UrbanLensDataset(TRAIN_DIR, transform=train_transform), batch_size=BATCH_SIZE, shuffle=True, num_workers=0 if not use_cuda else 2, pin_memory=use_cuda, persistent_workers=use_cuda)
+    val_loader = DataLoader(UrbanLensDataset(VAL_DIR, transform=val_transform), batch_size=BATCH_SIZE, num_workers=0 if not use_cuda else 2, pin_memory=use_cuda, persistent_workers=use_cuda)
 
     start_epoch = load_checkpoint(model, optimizer, args.model, args.resume)
     history = []
@@ -85,12 +85,18 @@ def run_train():
         for imgs, masks, _ in train_loader:
             imgs, masks = imgs.to(device, non_blocking=True), masks.to(device, non_blocking=True)
             optimizer.zero_grad(set_to_none=True)
-            with torch.amp.autocast("cuda"):
+            if use_amp:
+                with torch.amp.autocast("cuda"):
+                    out = model(imgs)
+                    loss = criterion(out, masks)
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
                 out = model(imgs)
                 loss = criterion(out, masks)
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+                loss.backward()
+                optimizer.step()
             t_loss += loss.item()
             t_iou += get_miou(out, masks)
 
@@ -99,7 +105,13 @@ def run_train():
         with torch.no_grad():
             for imgs, masks, _ in val_loader:
                 imgs, masks = imgs.to(device, non_blocking=True), masks.to(device, non_blocking=True)
-                with torch.amp.autocast("cuda"):
+                if use_amp:
+                    with torch.amp.autocast("cuda"):
+                        out = model(imgs)
+                        v_loss += criterion(out, masks).item()
+                        v_iou += get_miou(out, masks)
+                        v_gaf += calculate_gaf(out)
+                else:
                     out = model(imgs)
                     v_loss += criterion(out, masks).item()
                     v_iou += get_miou(out, masks)
