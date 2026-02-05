@@ -95,7 +95,7 @@ def run_train():
         for step, (imgs, masks, _) in enumerate(train_loader):
             imgs, masks = imgs.to(device), masks.to(device)
 
-            with torch.amp.autocast(enabled=use_cuda):
+            with torch.cuda.amp.autocast(enabled=use_cuda):
                 out = model(imgs)
                 loss = criterion(out, masks) / ACCUMULATION_STEPS
 
