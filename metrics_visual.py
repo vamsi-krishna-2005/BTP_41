@@ -45,4 +45,4 @@ def plot_metrics(history, model_name):
 unet_history = pd.read_csv('results/Albumented_unet_gpu_metrics.csv').to_dict('records')
 swin_history = pd.read_csv('results/Albumented_swin_gpu_metrics.csv').to_dict('records')
 plot_metrics(unet_history, 'U-Net')
-plot_metrics(swin_history, 'Swin-UNet')
+#plot_metrics(swin_history, 'Swin-UNet')
