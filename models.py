@@ -32,7 +32,7 @@ class UNet(nn.Module):
 class SwinUNet(nn.Module):
     def __init__(self, n_classes=7):
         super().__init__()
-        self.backbone = timm.create_model("swin_tiny_patch4_window7_224", pretrained=True, features_only=True)
+        self.backbone = timm.create_model("swin_tiny_patch4_window7_224", pretrained=False, features_only=True)
         
         # Decoder blocks
         self.up1 = nn.ConvTranspose2d(768, 384, 2, stride=2)

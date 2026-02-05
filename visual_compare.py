@@ -111,7 +111,7 @@ def generate_report(idx=0):
 
 
     plt.tight_layout()
-    plt.savefig(f"results/final_comparison_Albumentation_{idx}.png")
+    plt.savefig(f"results/final_comparison_Albumentation_Pretrained=false_{idx}.png")
     plt.close()
     print(f"Report saved for {name}")
 
