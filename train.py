@@ -26,6 +26,8 @@ print(f"Device name: {torch.cuda.get_device_name(0) if torch.cuda.is_available()
 # --- PATHS ---
 TRAIN_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/train"
 VAL_DIR = "/home/jayadeepj/Desktop/Urbanlens/data/valid"
+RUN_TAG = "{args.model}_gpu" if torch.cuda.is_available() else f"{args.model}_cpu"
+CSV_PATH = f"results/Albumented_{RUN_TAG}_metrics.csv"
 
 EPOCHS = 30
 BATCH_SIZE = 1
@@ -137,8 +139,8 @@ def run_train():
         history.append(metrics)
         print(f"[{args.model}] Ep {epoch+1} | T-Loss: {metrics['train_loss']:.4f} | V-mIoU: {metrics['val_mIoU']:.4f} | GAF: {metrics['avg_gaf']:.4f}")
         
-        save_checkpoint({'epoch': epoch+1, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, args.model)
-        pd.DataFrame(history).to_csv(f"results/Albumented_{args.model}_metrics.csv", index=False)
+        save_checkpoint({'epoch': epoch+1, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, RUN_TAG)
+        pd.DataFrame(history).to_csv(CSV_PATH, index=False)
 
 if __name__ == "__main__":
     os.makedirs("results", exist_ok=True)
