@@ -49,7 +49,7 @@ val_transform = A.Compose([
 # ---------------- TRAIN ----------------
 def run_train():
     if args.model == "swin":
-        model = SwinUNet(pretrained=True)
+        model = SwinUNet()
     else:
         model = UNet()
 
