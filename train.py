@@ -66,7 +66,7 @@ def run_train():
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
     criterion = nn.CrossEntropyLoss()
-    scaler = torch.cuda.amp.GradScaler(enabled=use_cuda)
+    scaler = torch.amp.GradScaler(enabled=use_cuda)
 
     train_loader = DataLoader(
         UrbanLensDataset(TRAIN_DIR, transform=train_transform),
@@ -95,7 +95,7 @@ def run_train():
         for step, (imgs, masks, _) in enumerate(train_loader):
             imgs, masks = imgs.to(device), masks.to(device)
 
-            with torch.cuda.amp.autocast(enabled=use_cuda):
+            with torch.amp.autocast(enabled=use_cuda):
                 out = model(imgs)
                 loss = criterion(out, masks) / ACCUMULATION_STEPS
 
@@ -131,7 +131,7 @@ def run_train():
         }
 
         history.append(metrics)
-        print(f"[{RUN_TAG}] Ep {epoch+1} | V-mIoU: {metrics['val_mIoU']:.4f}")
+        print(f"[{RUN_TAG}] Ep {epoch+1} |T-Loss: {metrics['train_loss']:.4f} | V-mIoU: {metrics['val_mIoU']:.4f} | V-GAF: {metrics['avg_gaf']:.4f}")
 
         save_checkpoint(
             {"epoch": epoch + 1,

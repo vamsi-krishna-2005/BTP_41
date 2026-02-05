@@ -52,8 +52,8 @@ def generate_report(idx=0):
     unet = UNet()
     swin = SwinUNet()
 
-    ckpt_unet = torch.load("checkpoints/unet_latest.pth", map_location="cpu")
-    ckpt_swin = torch.load("checkpoints/swin_latest.pth", map_location="cpu")
+    ckpt_unet = torch.load("checkpoints/Albumented_unet_latest.pth", map_location="cpu")
+    ckpt_swin = torch.load("checkpoints/Albumented_swin_latest.pth", map_location="cpu")
 
     unet.load_state_dict(ckpt_unet["state_dict"])
     swin.load_state_dict(ckpt_swin["state_dict"])
@@ -110,7 +110,7 @@ def generate_report(idx=0):
 
 
     plt.tight_layout()
-    plt.savefig(f"results/final_comparison_No_Albumentation_{idx}.png")
+    plt.savefig(f"results/final_comparison_Albumentation_{idx}.png")
     plt.close()
     print(f"Report saved for {name}")
 
