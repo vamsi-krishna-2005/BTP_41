@@ -39,7 +39,7 @@ def plot_metrics(history, model_name):
     plt.legend()
     
     plt.tight_layout()
-    plt.savefig(f"results/Metrics_visual_after_albumentation_{model_name}.png")
+    plt.savefig(f"results/Metrics_visual_after_albumentation_{model_name}_pretrained=false.png")
 
 
 unet_history = pd.read_csv('results/Albumented_unet_gpu_metrics.csv').to_dict('records')
