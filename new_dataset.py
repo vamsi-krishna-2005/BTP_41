@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
+import warnings
 
 class GIDDataset(Dataset):
     def __init__(self, img_dir, mask_dir, size=224, transform=None):
@@ -12,7 +13,19 @@ class GIDDataset(Dataset):
         self.size = size
         self.transform = transform # Added transform support
         
-        self.images = sorted(os.listdir(img_dir))
+        # Filter: keep only images that have corresponding masks
+        all_images = sorted(os.listdir(img_dir))
+        self.images = []
+        
+        for img_name in all_images:
+            mask_path = os.path.join(mask_dir, img_name)
+            if os.path.exists(mask_path):
+                self.images.append(img_name)
+            else:
+                warnings.warn(f"Mask not found for {img_name}, skipping this sample")
+        
+        if len(self.images) == 0:
+            raise ValueError(f"No matching image-mask pairs found in {img_dir} and {mask_dir}")
         
     def __len__(self):
         return len(self.images)
