@@ -7,7 +7,6 @@ from utils import get_miou, calculate_gaf, save_checkpoint, load_checkpoint
 import pandas as pd
 import argparse
 import os
-import wandb
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
@@ -15,9 +14,7 @@ from albumentations.pytorch import ToTensorV2
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str, default="swin")
 parser.add_argument("--resume", action="store_true")
-parser.add_argument("--wandb_project", type=str, default="urbanlens-segmentation")
-parser.add_argument("--wandb_entity", type=str, default=None)
-parser.add_argument("--wandb_run_name", type=str, default=None)
+
 args = parser.parse_args()
 
 use_cuda = torch.cuda.is_available()
@@ -89,24 +86,6 @@ def run_train():
     history = []
 
     run_name = args.wandb_run_name if args.wandb_run_name else RUN_TAG
-    wandb.init(
-        project=args.wandb_project,
-        entity=args.wandb_entity,
-        name=run_name,
-        config={
-            "model": args.model,
-            "run_tag": RUN_TAG,
-            "epochs": EPOCHS,
-            "batch_size": BATCH_SIZE,
-            "train_dir": TRAIN_DIR,
-            "val_dir": VAL_DIR,
-            "learning_rate": 3e-5 if args.model == "swin" else 1e-4,
-            "weight_decay": 1e-4,
-            "device": str(device),
-            "resume": args.resume,
-        },
-    )
-    wandb.watch(model, log="all", log_freq=100)
 
     for epoch in range(start_epoch, EPOCHS):
         # -------- TRAIN --------
@@ -155,7 +134,6 @@ def run_train():
         }
 
         history.append(metrics)
-        wandb.log(metrics, step=epoch + 1)
 
         print(
             f"[{RUN_TAG}] Ep {epoch+1:02d} | "
@@ -175,7 +153,6 @@ def run_train():
 
         pd.DataFrame(history).to_csv(CSV_PATH, index=False)
 
-    wandb.finish()
 
 
 if __name__ == "__main__":
