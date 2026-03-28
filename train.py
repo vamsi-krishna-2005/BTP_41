@@ -85,7 +85,6 @@ def run_train():
     start_epoch = load_checkpoint(model, optimizer, RUN_TAG, args.resume)
     history = []
 
-    run_name = args.wandb_run_name if args.wandb_run_name else RUN_TAG
 
     for epoch in range(start_epoch, EPOCHS):
         # -------- TRAIN --------
