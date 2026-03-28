@@ -3,7 +3,17 @@ import numpy as np
 import pandas as pd
 import os
 
-GAF_WEIGHTS = {0: 0.0, 1: 0.5, 2: 0.7, 3: 1.0, 4: 1.0, 5: 0.0, 6: 0.0}
+# GAF_WEIGHTS = {0: 0.0, 1: 0.5, 2: 0.7, 3: 1.0, 4: 1.0, 5: 0.0, 6: 0.0} ## This is the old weights for deepglobe dataset, we will need to change it for GID dataset
+GAF_WEIGHTS = {
+    0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0,      # Background / Urban
+    5: 1.5, 6: 1.5, 7: 1.5,                      # Agriculture / Cultivation
+    8: 1.0,                                      # Garden Plot / Floral
+    9: 1.80,                                     # Arbor Woodland / Large Trees
+    10: 0.20,                                    # Shrub land
+    11: 1.80,                                    # Natural Grassland
+    12: 1.20,                                    # Artificial Grassland
+    13: 1.0, 14: 1.0, 15: 1.0                    # River, Lake, Pond
+}
 
 def get_miou(pred, target, n_classes=7):
     pred = torch.argmax(pred, dim=1).view(-1)
