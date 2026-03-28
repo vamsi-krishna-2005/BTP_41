@@ -20,7 +20,7 @@ use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
 
 RUN_TAG = f"{args.model}_gpu" if use_cuda else f"{args.model}_cpu"
-CSV_PATH = f"results/Albumented_{RUN_TAG}_pretrained=false_metrics.csv"
+CSV_PATH = f"results/{RUN_TAG}_GID_model.csv"
 
 TRAIN_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug/train_images"
 VAL_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug/val_images"
