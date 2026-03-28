@@ -1,12 +1,13 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from dataset import UrbanLensDataset
+from new_dataset import GIDDataset
 from models import UNet, SwinUNet
 from utils import get_miou, calculate_gaf, save_checkpoint, load_checkpoint
 import pandas as pd
 import argparse
 import os
+import wandb
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
@@ -14,6 +15,9 @@ from albumentations.pytorch import ToTensorV2
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str, default="swin")
 parser.add_argument("--resume", action="store_true")
+parser.add_argument("--wandb_project", type=str, default="urbanlens-segmentation")
+parser.add_argument("--wandb_entity", type=str, default=None)
+parser.add_argument("--wandb_run_name", type=str, default=None)
 args = parser.parse_args()
 
 use_cuda = torch.cuda.is_available()
@@ -22,8 +26,10 @@ device = torch.device("cuda" if use_cuda else "cpu")
 RUN_TAG = f"{args.model}_gpu" if use_cuda else f"{args.model}_cpu"
 CSV_PATH = f"results/{RUN_TAG}_GID_model.csv"
 
-TRAIN_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug/train_images"
-VAL_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug/val_images"
+TRAIN_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug/train_images/train"
+TRAIN_MASK = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug/train_masks/train"
+VAL_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug/val_images/val"
+VAL_MASK = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug/val_masks/val"
 
 EPOCHS = 30
 BATCH_SIZE = 8   #NO gradient accumulation now
@@ -65,7 +71,7 @@ def run_train():
     scaler = torch.amp.GradScaler(enabled=use_cuda)
 
     train_loader = DataLoader(
-        UrbanLensDataset(TRAIN_DIR, transform=train_transform),
+        GIDDataset(TRAIN_DIR, TRAIN_MASK, size=224, transform=train_transform),
         batch_size=BATCH_SIZE,
         shuffle=True,
         num_workers=2,
@@ -73,7 +79,7 @@ def run_train():
     )
 
     val_loader = DataLoader(
-        UrbanLensDataset(VAL_DIR, transform=val_transform),
+        GIDDataset(VAL_DIR, VAL_MASK, size=224, transform=val_transform),
         batch_size=BATCH_SIZE,
         num_workers=2,
         pin_memory=True
@@ -81,6 +87,26 @@ def run_train():
 
     start_epoch = load_checkpoint(model, optimizer, RUN_TAG, args.resume)
     history = []
+
+    run_name = args.wandb_run_name if args.wandb_run_name else RUN_TAG
+    wandb.init(
+        project=args.wandb_project,
+        entity=args.wandb_entity,
+        name=run_name,
+        config={
+            "model": args.model,
+            "run_tag": RUN_TAG,
+            "epochs": EPOCHS,
+            "batch_size": BATCH_SIZE,
+            "train_dir": TRAIN_DIR,
+            "val_dir": VAL_DIR,
+            "learning_rate": 3e-5 if args.model == "swin" else 1e-4,
+            "weight_decay": 1e-4,
+            "device": str(device),
+            "resume": args.resume,
+        },
+    )
+    wandb.watch(model, log="all", log_freq=100)
 
     for epoch in range(start_epoch, EPOCHS):
         # -------- TRAIN --------
@@ -129,6 +155,7 @@ def run_train():
         }
 
         history.append(metrics)
+        wandb.log(metrics, step=epoch + 1)
 
         print(
             f"[{RUN_TAG}] Ep {epoch+1:02d} | "
@@ -147,6 +174,8 @@ def run_train():
         )
 
         pd.DataFrame(history).to_csv(CSV_PATH, index=False)
+
+    wandb.finish()
 
 
 if __name__ == "__main__":

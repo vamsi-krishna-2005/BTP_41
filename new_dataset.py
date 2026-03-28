@@ -6,12 +6,12 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 
 class GIDDataset(Dataset):
-    def __init__(self, img_dir, mask_dir, size=224):
+    def __init__(self, img_dir, mask_dir, size=224, transform=None):
         self.img_dir = img_dir
         self.mask_dir = mask_dir
         self.size = size
+        self.transform = transform # Added transform support
         
-        # List all images
         self.images = sorted(os.listdir(img_dir))
         
     def __len__(self):
@@ -19,19 +19,23 @@ class GIDDataset(Dataset):
 
     def __getitem__(self, idx):
         img_name = self.images[idx]
-        # Assuming the mask has the exact same name or a standard suffix
-        # Adjust the replace string if your masks have a '_mask' suffix
-        mask_name = img_name 
+        mask_name = img_name # Assuming mask has the exact same name
         
         img_path = os.path.join(self.img_dir, img_name)
         mask_path = os.path.join(self.mask_dir, mask_name)
 
-        image = Image.open(img_path).convert("RGB").resize((self.size, self.size))
+        # Albumentations requires NumPy arrays, NOT PIL Images
+        image = np.array(Image.open(img_path).convert("RGB").resize((self.size, self.size)))
+        mask = np.array(Image.open(mask_path).resize((self.size, self.size), resample=Image.NEAREST))
         
-        # Masks in GID are usually 1-channel arrays with values 0-15
-        mask = Image.open(mask_path).resize((self.size, self.size), resample=Image.NEAREST)
-        
-        image = transforms.ToTensor()(image)
-        mask = torch.from_numpy(np.array(mask)).long()
+        # Apply Albumentations
+        if self.transform is not None:
+            augmented = self.transform(image=image, mask=mask)
+            image = augmented['image']
+            mask = augmented['mask']
+        else:
+            # Fallback if no transform is provided
+            image = transforms.ToTensor()(image)
+            mask = torch.from_numpy(mask).long()
 
-        return image, mask, img_name
+        return image, mask.long(), img_name
