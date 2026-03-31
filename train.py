@@ -21,7 +21,7 @@ args = parser.parse_args()
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
 
-RUN_TAG = f"{args.model}_gpu" if use_cuda else f"{args.model}_cpu"
+RUN_TAG = f"{args.model}_gpu_gid" if use_cuda else f"{args.model}_cpu_gid"
 CSV_PATH = f"results/{RUN_TAG}_GID_model.csv"
 
 # --- POINT TO THE NEW PREPROCESSED FOLDERS ---
