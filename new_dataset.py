@@ -61,6 +61,12 @@ class GIDDataset(Dataset):
         image = np.array(Image.open(img_path).convert("RGB").resize((self.size, self.size)))
         mask = np.array(Image.open(mask_path).resize((self.size, self.size), resample=Image.NEAREST))
         
+        # --- THE FIX IS HERE ---
+        # If the mask loads with 3 color channels (RGB), keep only the first channel
+        if len(mask.shape) == 3:
+            mask = mask[:, :, 0]
+        # -----------------------
+
         # Apply Albumentations
         if self.transform is not None:
             augmented = self.transform(image=image, mask=mask)
