@@ -67,12 +67,12 @@ def run_train():
 
     train_loader = DataLoader(
         GIDDataset(TRAIN_DIR, TRAIN_MASK, transform=train_transform),
-        batch_size=BATCH_SIZE, shuffle=True, num_workers=0, pin_memory=False
+        batch_size=BATCH_SIZE, shuffle=True, num_workers=4, pin_memory=True
     )
 
     val_loader = DataLoader(
         GIDDataset(VAL_DIR, VAL_MASK, transform=val_transform),
-        batch_size=BATCH_SIZE, num_workers=0, pin_memory=False
+        batch_size=BATCH_SIZE, num_workers=4, pin_memory=True
     )
 
     start_epoch = load_checkpoint(model, optimizer, RUN_TAG, args.resume)
