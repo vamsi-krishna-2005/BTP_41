@@ -16,7 +16,6 @@ class DoubleConv(nn.Module):
     def forward(self, x): return self.conv(x)
 
 class UNet(nn.Module):
-    # ... (Keep your existing UNet code here) ...
     def __init__(self, n_classes=16): # Changed to 16 for GID
         super().__init__()
         self.enc1 = DoubleConv(3, 64)
@@ -47,7 +46,6 @@ class SwinDecoderBlock(nn.Module):
 class SwinUNet(nn.Module):
     def __init__(self, n_classes=16): # GID has 16 classes (0-15)
         super().__init__()
-        # MUST BE TRUE for Transfer Learning
         self.backbone = timm.create_model("swin_tiny_patch4_window7_224", pretrained=True, features_only=True)
         
         # Swin-Tiny feature channels: f[0]=96, f[1]=192, f[2]=384, f[3]=768

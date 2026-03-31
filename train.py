@@ -71,15 +71,15 @@ def run_train():
         GIDDataset(TRAIN_DIR, TRAIN_MASK, size=224, transform=train_transform),
         batch_size=BATCH_SIZE,
         shuffle=True,
-        num_workers=2,
-        pin_memory=True
+        num_workers=0,
+        pin_memory=False
     )
 
     val_loader = DataLoader(
         GIDDataset(VAL_DIR, VAL_MASK, size=224, transform=val_transform),
         batch_size=BATCH_SIZE,
-        num_workers=2,
-        pin_memory=True
+        num_workers=0,
+        pin_memory=False
     )
 
     start_epoch = load_checkpoint(model, optimizer, RUN_TAG, args.resume)
