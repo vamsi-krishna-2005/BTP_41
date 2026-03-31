@@ -23,29 +23,25 @@ device = torch.device("cuda" if use_cuda else "cpu")
 RUN_TAG = f"{args.model}_gpu" if use_cuda else f"{args.model}_cpu"
 CSV_PATH = f"results/{RUN_TAG}_GID_model.csv"
 
-TRAIN_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug/train_images/train"
-TRAIN_MASK = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug/train_masks/train"
-VAL_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug/val_images/val"
-VAL_MASK = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug/val_masks/val"
+# --- POINT TO THE NEW PREPROCESSED FOLDERS ---
+TRAIN_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/preprocessed_224/train_images"
+TRAIN_MASK = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/preprocessed_224/train_masks"
+VAL_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/preprocessed_224/val_images"
+VAL_MASK = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/preprocessed_224/val_masks"
 
-EPOCHS = 30
-BATCH_SIZE = 8   #NO gradient accumulation now
+EPOCHS = 50
+BATCH_SIZE = 8
+PATIENCE = 3 # Early stopping patience
 
 # ---------------- AUGMENTATIONS ----------------
 train_transform = A.Compose([
     A.HorizontalFlip(p=0.5),
-    A.Normalize(
-        mean=(0.485, 0.456, 0.406),
-        std=(0.229, 0.224, 0.225)
-    ),
+    A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
     ToTensorV2()
 ])
 
 val_transform = A.Compose([
-    A.Normalize(
-        mean=(0.485, 0.456, 0.406),
-        std=(0.229, 0.224, 0.225)
-    ),
+    A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
     ToTensorV2()
 ])
 
@@ -58,33 +54,27 @@ def run_train():
 
     model.to(device)
 
-    optimizer = torch.optim.AdamW(
-        model.parameters(),
-        lr=3e-5 if args.model == "swin" else 1e-4,
-        weight_decay=1e-4
-    )
-
+    optimizer = torch.optim.AdamW(model.parameters(), lr=3e-5 if args.model == "swin" else 1e-4, weight_decay=1e-4)
     criterion = nn.CrossEntropyLoss()
     scaler = torch.amp.GradScaler(enabled=use_cuda)
 
     train_loader = DataLoader(
-        GIDDataset(TRAIN_DIR, TRAIN_MASK, size=224, transform=train_transform),
-        batch_size=BATCH_SIZE,
-        shuffle=True,
-        num_workers=0,
-        pin_memory=False
+        GIDDataset(TRAIN_DIR, TRAIN_MASK, transform=train_transform),
+        batch_size=BATCH_SIZE, shuffle=True, num_workers=0, pin_memory=False
     )
 
     val_loader = DataLoader(
-        GIDDataset(VAL_DIR, VAL_MASK, size=224, transform=val_transform),
-        batch_size=BATCH_SIZE,
-        num_workers=0,
-        pin_memory=False
+        GIDDataset(VAL_DIR, VAL_MASK, transform=val_transform),
+        batch_size=BATCH_SIZE, num_workers=0, pin_memory=False
     )
 
     start_epoch = load_checkpoint(model, optimizer, RUN_TAG, args.resume)
     history = []
+    
+    best_iou = 0.0
+    patience_counter = 0
 
+    print(f"Starting training for {args.model.upper()}...")
 
     for epoch in range(start_epoch, EPOCHS):
         # -------- TRAIN --------
@@ -131,7 +121,6 @@ def run_train():
             "val_mIoU": v_iou / len(val_loader),
             "avg_gaf": v_gaf / len(val_loader),
         }
-
         history.append(metrics)
 
         print(
@@ -141,18 +130,23 @@ def run_train():
             f"GAF: {metrics['avg_gaf']:.4f}"
         )
 
-        save_checkpoint(
-            {
-                "epoch": epoch + 1,
-                "state_dict": model.state_dict(),
-                "optimizer": optimizer.state_dict(),
-            },
-            RUN_TAG,
-        )
-
         pd.DataFrame(history).to_csv(CSV_PATH, index=False)
 
+        # -------- EARLY STOPPING LOGIC --------
+        current_iou = metrics['val_mIoU']
+        if current_iou > best_iou:
+            best_iou = current_iou
+            patience_counter = 0
+            # Save only the best model
+            save_checkpoint({'epoch': epoch + 1, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, RUN_TAG)
+            print(f"  -> Best model saved! (mIoU: {best_iou:.4f})")
+        else:
+            patience_counter += 1
+            print(f"  -> No improvement. Patience: {patience_counter}/{PATIENCE}")
 
+        if patience_counter >= PATIENCE:
+            print(f"Early stopping triggered at epoch {epoch+1}! Best mIoU was {best_iou:.4f}")
+            break
 
 if __name__ == "__main__":
     os.makedirs("results", exist_ok=True)
