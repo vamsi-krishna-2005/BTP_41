@@ -9,6 +9,7 @@ import argparse
 import os
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
+from tqdm import tqdm  # <--- THIS IS THE MAGIC VISUALIZER
 
 # ---------------- SETUP ----------------
 parser = argparse.ArgumentParser()
@@ -32,6 +33,7 @@ VAL_MASK = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/preprocessed_224/val_m
 EPOCHS = 50
 BATCH_SIZE = 8
 PATIENCE = 3 # Early stopping patience
+ACCUMULATION_STEPS = 4 # Acts like Batch Size 32 (8 * 4)
 
 # ---------------- AUGMENTATIONS ----------------
 train_transform = A.Compose([
@@ -54,7 +56,12 @@ def run_train():
 
     model.to(device)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=3e-5 if args.model == "swin" else 1e-4, weight_decay=1e-4)
+    # Increased starting LR so the scheduler has room to reduce it
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3 if args.model == "swin" else 1e-3, weight_decay=1e-4)
+    
+    # Scheduler: Cuts LR in half if validation loss plateaus
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=1, verbose=True)
+    
     criterion = nn.CrossEntropyLoss()
     scaler = torch.amp.GradScaler(enabled=use_cuda)
 
@@ -81,38 +88,57 @@ def run_train():
         model.train()
         t_loss, t_iou = 0.0, 0.0
 
-        for imgs, masks, _ in train_loader:
+        # Wrap train_loader in tqdm for a progress bar
+        train_pbar = tqdm(train_loader, desc=f"Epoch {epoch+1:02d}/{EPOCHS} [Train]")
+        
+        for i, (imgs, masks, _) in enumerate(train_pbar):
             imgs = imgs.to(device, non_blocking=True)
             masks = masks.to(device, non_blocking=True)
-
-            optimizer.zero_grad(set_to_none=True)
 
             with torch.amp.autocast("cuda", enabled=use_cuda):
                 out = model(imgs)
                 loss = criterion(out, masks)
+                # Normalize loss for accumulation
+                loss = loss / ACCUMULATION_STEPS 
 
             scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
 
-            t_loss += loss.item()
+            # Step optimizer only every ACCUMULATION_STEPS
+            if (i + 1) % ACCUMULATION_STEPS == 0 or (i + 1) == len(train_loader):
+                scaler.step(optimizer)
+                scaler.update()
+                optimizer.zero_grad(set_to_none=True)
+
+            # Un-normalize for logging
+            step_loss = loss.item() * ACCUMULATION_STEPS
+            t_loss += step_loss
             t_iou += get_miou(out, masks)
+            
+            # Update the progress bar with the current loss
+            train_pbar.set_postfix(loss=f"{step_loss:.4f}")
 
         # -------- VALID --------
         model.eval()
         v_loss, v_iou, v_gaf = 0.0, 0.0, 0.0
 
+        # Wrap val_loader in tqdm
+        val_pbar = tqdm(val_loader, desc=f"Epoch {epoch+1:02d}/{EPOCHS} [Valid]")
+        
         with torch.no_grad():
-            for imgs, masks, _ in val_loader:
+            for imgs, masks, _ in val_pbar:
                 imgs = imgs.to(device, non_blocking=True)
                 masks = masks.to(device, non_blocking=True)
 
                 with torch.amp.autocast("cuda", enabled=use_cuda):
                     out = model(imgs)
-                    v_loss += criterion(out, masks).item()
+                    batch_loss = criterion(out, masks).item()
+                    v_loss += batch_loss
                     v_iou += get_miou(out, masks)
                     v_gaf += calculate_gaf(out)
+                    
+                val_pbar.set_postfix(loss=f"{batch_loss:.4f}")
 
+        # -------- METRICS & SCHEDULER --------
         metrics = {
             "epoch": epoch + 1,
             "train_loss": t_loss / len(train_loader),
@@ -124,7 +150,7 @@ def run_train():
         history.append(metrics)
 
         print(
-            f"[{RUN_TAG}] Ep {epoch+1:02d} | "
+            f"\n[{RUN_TAG}] Ep {epoch+1:02d} Summary | "
             f"T-Loss: {metrics['train_loss']:.4f} | "
             f"V-mIoU: {metrics['val_mIoU']:.4f} | "
             f"GAF: {metrics['avg_gaf']:.4f}"
@@ -132,17 +158,19 @@ def run_train():
 
         pd.DataFrame(history).to_csv(CSV_PATH, index=False)
 
+        # ---------------- IMPORTANT: STEP THE SCHEDULER ----------------
+        scheduler.step(metrics['val_loss'])
+
         # -------- EARLY STOPPING LOGIC --------
         current_iou = metrics['val_mIoU']
         if current_iou > best_iou:
             best_iou = current_iou
             patience_counter = 0
-            # Save only the best model
             save_checkpoint({'epoch': epoch + 1, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, RUN_TAG)
-            print(f"  -> Best model saved! (mIoU: {best_iou:.4f})")
+            print(f"  -> Best model saved! (mIoU: {best_iou:.4f})\n")
         else:
             patience_counter += 1
-            print(f"  -> No improvement. Patience: {patience_counter}/{PATIENCE}")
+            print(f"  -> No improvement. Patience: {patience_counter}/{PATIENCE}\n")
 
         if patience_counter >= PATIENCE:
             print(f"Early stopping triggered at epoch {epoch+1}! Best mIoU was {best_iou:.4f}")
