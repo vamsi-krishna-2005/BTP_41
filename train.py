@@ -1,4 +1,6 @@
 import torch
+import os
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from new_dataset import GIDDataset
@@ -6,7 +8,6 @@ from models import UNet, SwinUNet
 from utils import get_miou, calculate_gaf, save_checkpoint, load_checkpoint
 import pandas as pd
 import argparse
-import os
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from tqdm import tqdm  # <--- THIS IS THE MAGIC VISUALIZER
@@ -31,9 +32,9 @@ VAL_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/preprocessed_224/val_im
 VAL_MASK = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/preprocessed_224/val_masks"
 
 EPOCHS = 50
-BATCH_SIZE = 8
+BATCH_SIZE = 4
 PATIENCE = 3 # Early stopping patience
-ACCUMULATION_STEPS = 4 # Acts like Batch Size 32 (8 * 4)
+ACCUMULATION_STEPS = 8 # Acts like Batch Size 32 (8 * 4)
 
 # ---------------- AUGMENTATIONS ----------------
 train_transform = A.Compose([
