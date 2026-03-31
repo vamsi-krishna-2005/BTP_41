@@ -25,15 +25,22 @@ def get_miou(pred, target, n_classes=7):
         if union > 0: iou_list.append(intersection / union)
     return np.mean(iou_list) if iou_list else 0
 
-def calculate_gaf(mask):
-    if torch.is_tensor(mask):
-        if len(mask.shape) == 3: # (C, H, W)
-            mask = torch.argmax(mask, dim=0).cpu().numpy()
-        else:
-            mask = mask.cpu().numpy()
-    total = mask.size
-    score = sum((np.sum(mask == cls) * w) for cls, w in GAF_WEIGHTS.items())
-    return score / total
+def calculate_gaf(preds):
+    if torch.is_tensor(preds):
+        # If input is a 4D batch from the model: [Batch, Channels, Height, Width]
+        if len(preds.shape) == 4:
+            # Get the highest probability class for each pixel
+            preds = torch.argmax(preds, dim=1) 
+        # If input is 3D: [Channels, Height, Width]
+        elif len(preds.shape) == 3:
+            preds = torch.argmax(preds, dim=0)
+            
+        preds = preds.cpu().numpy()
+        
+    total_pixels = preds.size
+    score = sum((np.sum(preds == cls) * w) for cls, w in GAF_WEIGHTS.items())
+    
+    return score / total_pixels
 
 def save_checkpoint(state, model_name):
     path = f"checkpoints/Albumented_{model_name}_latest.pth" # this has been changed with respect to albumentaions version
