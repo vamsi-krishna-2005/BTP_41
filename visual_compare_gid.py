@@ -9,6 +9,7 @@ from utils import calculate_gaf, get_miou
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from PIL import Image
+import random
 import os
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -46,7 +47,7 @@ def generate_report(idx=0):
     ds = GIDDataset(TEST_IMG_DIR, TEST_MASK_DIR, transform=val_transform)
     
     # Also load the raw image for plotting and resize to match model input/mask size
-    raw_img = Image.open(os.path.join(TEST_IMG_DIR, ds.images[idx]))
+    raw_img = Image.open(os.path.join(TEST_IMG_DIR, random.choice(ds.images[idx])))
     raw_img = raw_img.resize((224, 224), Image.BILINEAR)
     
     img_tensor, mask, name = ds[idx]
