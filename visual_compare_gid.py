@@ -69,7 +69,7 @@ def generate_report(idx=0):
         out_s = swin(inp)
 
     # Metrics Calculation
-    gaf_gt = calculate_gaf(mask.unsqueeze(0))
+    gaf_gt = calculate_gaf(mask)
     gaf_u = calculate_gaf(out_u)
     gaf_s = calculate_gaf(out_s)
 
