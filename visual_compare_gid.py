@@ -47,7 +47,7 @@ def generate_report(idx=0):
     ds = GIDDataset(TEST_IMG_DIR, TEST_MASK_DIR, transform=val_transform)
     
     # Also load the raw image for plotting and resize to match model input/mask size
-    raw_img = Image.open(os.path.join(TEST_IMG_DIR, random.choice(ds.images[idx])))
+    raw_img = Image.open(os.path.join(TEST_IMG_DIR, ds.images[idx]))
     raw_img = raw_img.resize((224, 224), Image.BILINEAR)
     
     img_tensor, mask, name = ds[idx]
@@ -108,4 +108,5 @@ def generate_report(idx=0):
 
 if __name__ == "__main__":
     for i in range(5): 
+        x = random.randint(0, 99)  # Assuming 100 test samples
         generate_report(i)
