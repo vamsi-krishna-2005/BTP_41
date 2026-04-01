@@ -8,12 +8,14 @@ from models import UNet, SwinUNet
 from utils import calculate_gaf, get_miou
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
+from PIL import Image
+import os
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # --- NEW GID-15 PATHS ---
-TEST_IMG_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/preprocessed_224/val_images"
-TEST_MASK_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/preprocessed_224/val_masks"
+TEST_IMG_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug/test_images"
+TEST_MASK_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug/test_masks"
 
 # --- 16 CLASSES FOR GID-15 ---
 CLASS_NAMES = {
@@ -34,6 +36,7 @@ norm = BoundaryNorm(range(len(COLORS) + 1), cmap.N)
 
 # Must use the exact validation transform used in training
 val_transform = A.Compose([
+    A.Resize(224, 224),
     A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
     ToTensorV2()
 ])
@@ -42,10 +45,9 @@ def generate_report(idx=0):
     # Load Dataset
     ds = GIDDataset(TEST_IMG_DIR, TEST_MASK_DIR, transform=val_transform)
     
-    # Also load the raw image just for beautiful plotting (without normalization)
-    from PIL import Image
-    import os
+    # Also load the raw image for plotting and resize to match model input/mask size
     raw_img = Image.open(os.path.join(TEST_IMG_DIR, ds.images[idx]))
+    raw_img = raw_img.resize((224, 224), Image.BILINEAR)
     
     img_tensor, mask, name = ds[idx]
 
@@ -94,11 +96,10 @@ def generate_report(idx=0):
     axes[3].imshow(pred_s, cmap=cmap, norm=norm)
     axes[3].set_title(f"Swin-UNet\nmIoU: {iou_s:.3f} | GAF: {gaf_s:.4f}")
 
-    # Dynamic Legend based on classes actually present in the image
-    present_classes = torch.unique(mask).cpu().tolist()
-    handles = [mpatches.Patch(color=COLORS[c], label=f"{c}: {CLASS_NAMES[c]}") for c in present_classes]
+    # Fixed legend with all 16 classes for consistent presentation
+    handles = [mpatches.Patch(color=COLORS[c], label=f"{c}: {CLASS_NAMES[c]}") for c in range(16)]
 
-    fig.legend(handles=handles, loc="lower center", ncol=min(len(handles), 6), bbox_to_anchor=(0.5, -0.05))
+    fig.legend(handles=handles, loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.23))
     plt.tight_layout()
     plt.savefig(f"results/GID_comparison_{idx}.png", bbox_inches='tight')
     plt.close()
