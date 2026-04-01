@@ -2,7 +2,6 @@ import os
 import random
 import shutil
 
-# Use the preprocessed_224 directory where images/masks are already 224x224 PNG files
 BASE_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/preprocessed_224"
 
 VAL_IMG_DIR = os.path.join(BASE_DIR, "val_images")
@@ -11,18 +10,14 @@ VAL_MASK_DIR = os.path.join(BASE_DIR, "val_masks")
 TEST_IMG_DIR = os.path.join(BASE_DIR, "test_images")
 TEST_MASK_DIR = os.path.join(BASE_DIR, "test_masks")
 
-# Create test directories
 os.makedirs(TEST_IMG_DIR, exist_ok=True)
 os.makedirs(TEST_MASK_DIR, exist_ok=True)
 
-# Get all validation images
 val_images = [f for f in os.listdir(VAL_IMG_DIR) if f.endswith(('.png', '.jpg', '.tif'))]
 
-# Shuffle randomly to ensure a fair split
-random.seed(42) # For reproducibility
+random.seed(42) 
 random.shuffle(val_images)
 
-# Take exactly 50% of the validation set for testing
 split_idx = len(val_images) // 2
 test_images = val_images[:split_idx]
 
@@ -31,8 +26,6 @@ print(f"Moving {len(test_images)} images to the new Test Set...")
 
 moved_count = 0
 for img_name in test_images:
-    # Assuming masks have the exact same name. 
-    # (If they have a suffix like _mask, change this line: mask_name = img_name.replace('.png', '_mask.png'))
     mask_name = img_name 
     
     # Source paths
