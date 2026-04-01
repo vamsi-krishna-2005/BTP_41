@@ -108,5 +108,5 @@ def generate_report(idx=0):
 
 if __name__ == "__main__":
     for i in range(5): 
-        x = random.randint(0, 99)  # Assuming 100 test samples
+        x = random.randint(0, 99)  # Assuming 100 test samples 
         generate_report(i)
