@@ -54,8 +54,8 @@ def generate_report(idx=0):
     swin = SwinUNet().to(device)
 
     # Load New GID Checkpoints
-    ckpt_unet = torch.load("checkpoints/unet_gpu_gid_latest.pth", map_location=device)
-    ckpt_swin = torch.load("checkpoints/swin_gpu_gid_latest.pth", map_location=device)
+    ckpt_unet = torch.load("checkpoints/Albumented_unet_gpu_gid_latest.pth", map_location=device)
+    ckpt_swin = torch.load("checkpoints/Albumented_swin_gpu_gid_latest.pth", map_location=device)
 
     unet.load_state_dict(ckpt_unet["state_dict"])
     swin.load_state_dict(ckpt_swin["state_dict"])
