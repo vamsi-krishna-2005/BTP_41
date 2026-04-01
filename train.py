@@ -59,8 +59,8 @@ def run_train():
     model.to(device)
 
     # Increased starting LR so the scheduler has room to reduce it
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3 if args.model == "swin" else 1e-3, weight_decay=1e-4)
-    
+    # Use 3e-5 for SWIN (safe for Transformers), and 1e-4 for UNet
+    optimizer = torch.optim.AdamW(model.parameters(), lr=3e-5 if args.model == "swin" else 1e-4, weight_decay=1e-4)    
     # Scheduler: Cuts LR in half if validation loss plateaus
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=1, verbose=True)
     
