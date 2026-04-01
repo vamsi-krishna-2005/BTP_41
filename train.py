@@ -1,4 +1,5 @@
 import torch
+torch.backends.cudnn.benchmark = True
 import os
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 import torch.nn as nn
@@ -82,7 +83,7 @@ def run_train():
     best_iou = 0.0
     patience_counter = 0
 
-    print(f"Starting training for {args.model.upper()}...")
+    print(f"Starting training for {RUN_TAG}...")
 
     for epoch in range(start_epoch, EPOCHS):
         # -------- TRAIN --------
@@ -96,7 +97,7 @@ def run_train():
             imgs = imgs.to(device, non_blocking=True)
             masks = masks.to(device, non_blocking=True)
 
-            with torch.amp.autocast("cuda", enabled=use_cuda):
+            with torch.amp.autocast("cuda", enabled=use_cuda, dtype=torch.bfloat16):
                 out = model(imgs)
                 loss = criterion(out, masks)
                 # Normalize loss for accumulation
@@ -130,7 +131,7 @@ def run_train():
                 imgs = imgs.to(device, non_blocking=True)
                 masks = masks.to(device, non_blocking=True)
 
-                with torch.amp.autocast("cuda", enabled=use_cuda):
+                with torch.amp.autocast("cuda", enabled=use_cuda, dtype=torch.bfloat16):
                     out = model(imgs)
                     batch_loss = criterion(out, masks).item()
                     v_loss += batch_loss
