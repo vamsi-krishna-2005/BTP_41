@@ -14,8 +14,8 @@ import os
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # --- NEW GID-15 PATHS ---
-TEST_IMG_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug/test_images"
-TEST_MASK_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug/test_masks"
+TEST_IMG_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/preprocessed_224/test_images"
+TEST_MASK_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/preprocessed_224/test_masks"
 
 # --- 16 CLASSES FOR GID-15 ---
 CLASS_NAMES = {

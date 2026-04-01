@@ -2,11 +2,11 @@ import os
 import random
 import shutil
 
-# Paths based on your current directory structure
-BASE_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/data/data_for_keras_aug"
+# Use the preprocessed_224 directory where images/masks are already 224x224 PNG files
+BASE_DIR = "/home/jayadeepj/Desktop/Urbanlens/gid_dataset/preprocessed_224"
 
-VAL_IMG_DIR = os.path.join(BASE_DIR, "val_images/val")
-VAL_MASK_DIR = os.path.join(BASE_DIR, "val_masks/val")
+VAL_IMG_DIR = os.path.join(BASE_DIR, "val_images")
+VAL_MASK_DIR = os.path.join(BASE_DIR, "val_masks")
 
 TEST_IMG_DIR = os.path.join(BASE_DIR, "test_images")
 TEST_MASK_DIR = os.path.join(BASE_DIR, "test_masks")
