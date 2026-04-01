@@ -107,6 +107,18 @@ def generate_report(idx=0):
     print(f"Report saved for {name}")
 
 if __name__ == "__main__":
-    for i in range(5): 
-        x = random.randint(0, 99)  # Assuming 100 test samples 
-        generate_report(i)
+    # Get actual number of test samples dynamically
+    test_images = [f for f in os.listdir(TEST_IMG_DIR) if f.endswith(('.png', '.jpg', '.tif'))]
+    num_samples = len(test_images)
+    
+    if num_samples == 0:
+        print(f"Error: No test images found in {TEST_IMG_DIR}")
+       
+    else:
+        print(f"Found {num_samples} test samples\n")
+        random.seed()  
+        
+        for i in range(5): 
+            random_idx = random.randint(0, num_samples - 1)
+            print(f"Sample {i+1}/5 - Testing random image at index {random_idx}...")
+            generate_report(random_idx)
