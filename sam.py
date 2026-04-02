@@ -16,7 +16,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # --- PATHS ---
 DEEPGLOBE_TEST_IMG = "/home/jayadeepj/Desktop/Urbanlens/data/test/926551_sat.jpg" 
-SWIN_CKPT = "checkpoints/swin_gpu_gid_latest.pth"
+SWIN_CKPT = "checkpoints/Albumented_swin_gpu_gid_latest.pth"
 SAM_CKPT = "sam_vit_h_4b8939.pth"
 
 # Let's test on Water (River=13, Lake=14, Pond=15 in GID-15)
