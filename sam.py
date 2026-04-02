@@ -23,7 +23,7 @@ SWIN_CKPT = "checkpoints/Albumented_swin_gpu_gid_latest.pth"
 SAM_CKPT = "sam_vit_h_4b8939.pth"
 
 # Hardcoded for Water (GID-15 Classes: River=13, Lake=14, Pond=15)
-TARGET_CLASSES = [5, 6, 7] 
+TARGET_CLASSES = [5, 6, 7, 8] # these can be changed to target different classes 
 
 # ==========================================
 # GID-15 CLASSES & COLORS (For Swin-Unet)
