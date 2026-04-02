@@ -23,7 +23,7 @@ SWIN_CKPT = "checkpoints/Albumented_swin_gpu_gid_latest.pth"
 SAM_CKPT = "sam_vit_h_4b8939.pth"
 
 # Hardcoded for Water (GID-15 Classes: River=13, Lake=14, Pond=15)
-TARGET_CLASSES = [5, 6, 7, 8] # these can be changed to target different classes 
+TARGET_CLASSES = [1, 2, 3] # these can be changed to target different classes 
 
 # ==========================================
 # GID-15 CLASSES & COLORS (For Swin-Unet)
@@ -103,7 +103,7 @@ def run_generalization():
     target_mask = np.isin(swin_pred, TARGET_CLASSES).astype(np.uint8)
 
     if np.sum(target_mask) == 0:
-        print("\n[!] Swin-Unet could not find Agriculture in this image. Try an image with agricultural land!")
+        print("\n[!] Swin-Unet could not find Urban in this image. Try an image with urban areas!")
         return
 
     print("[4] Extracting Bounding Box & Running SAM...")
@@ -120,7 +120,7 @@ def run_generalization():
 
     print("[5] Generating the 2x3 Storyboard...")
     fig, axes = plt.subplots(2, 3, figsize=(24, 15))
-    fig.suptitle("DeepGlobe Generalization & Boundary Refinement (Target: Agriculture)", fontsize=26, fontweight='bold', y=0.98)
+    fig.suptitle("DeepGlobe Generalization & Boundary Refinement (Target: Urban)", fontsize=26, fontweight='bold', y=0.98)
 
     # --- ROW 1: THE DATA & SEMANTICS ---
     axes[0, 0].imshow(raw_img_np)
@@ -137,7 +137,7 @@ def run_generalization():
 
     # --- ROW 2: THE AUTOMATION PIPELINE ---
     axes[1, 0].imshow(target_mask, cmap='gray')
-    axes[1, 0].set_title("4. Isolated Prediction (Agriculture Only)", fontsize=18, fontweight='bold', pad=15)
+    axes[1, 0].set_title("4. Isolated Prediction (Urban Only)", fontsize=18, fontweight='bold', pad=15)
     axes[1, 0].axis('off')
 
     axes[1, 1].imshow(raw_img_np)
@@ -170,9 +170,9 @@ def run_generalization():
     fig.legend(handles=[red_patch, box_patch, green_patch], loc="lower center", ncol=3, fontsize=16, bbox_to_anchor=(0.5, 0.02))
 
     plt.tight_layout(h_pad=8) # Added extra padding so legends don't overlap images
-    plt.savefig(f"results/DeepGlobe_Storyboard_Agriculture.png", dpi=300, bbox_inches='tight')
+    plt.savefig(f"results/DeepGlobe_Storyboard_Urban.png", dpi=300, bbox_inches='tight')
     plt.close()
-    print("Done! Check out results/DeepGlobe_Storyboard_Agriculture.png")
+    print("Done! Check out results/DeepGlobe_Storyboard_Urban.png")
 
 if __name__ == "__main__":
     run_generalization()
