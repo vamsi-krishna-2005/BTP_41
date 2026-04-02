@@ -18,7 +18,7 @@ from segment_anything import sam_model_registry, SamPredictor
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # --- PATHS ---
-DEEPGLOBE_TEST_IMG = "/home/jayadeepj/Desktop/Urbanlens/data/test/926551_sat.jpg" 
+DEEPGLOBE_TEST_IMG = "/home/jayadeepj/Desktop/Urbanlens/data/test/855_sat.jpg" 
 DEEPGLOBE_TEST_MASK = DEEPGLOBE_TEST_IMG.replace("_sat.jpg", "_mask.png") 
 
 SWIN_CKPT = "checkpoints/Albumented_swin_gpu_gid_latest.pth"
@@ -159,9 +159,9 @@ def run_generalization():
     fig.legend(handles=[red_patch, box_patch, green_patch], loc="lower center", ncol=3, fontsize=16, bbox_to_anchor=(0.5, -0.02)) # Bottom legend for Row 2
 
     plt.tight_layout(h_pad=6) 
-    plt.savefig(f"results/Ultimate_Storyboard_{TARGET_FEATURE.replace(' ', '_')}.png", dpi=300, bbox_inches='tight')
+    plt.savefig(f"results/Deepglobe_results_{TARGET_FEATURE.replace(' ', '_')}.png", dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"Done! Check out results/Ultimate_Storyboard_{TARGET_FEATURE.replace(' ', '_')}.png")
+    print(f"Done! Check out results/Deepglobe_results_{TARGET_FEATURE.replace(' ', '_')}.png")
 
 if __name__ == "__main__":
     run_generalization()
