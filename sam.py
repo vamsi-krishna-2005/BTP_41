@@ -5,6 +5,8 @@ import cv2
 from PIL import Image
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
+import matplotlib.patches as mpatches
+
 
 # Import your custom model
 from models import SwinUNet
@@ -94,30 +96,42 @@ def run_generalization():
     sam_mask = masks[0]
 
     print("[6] Generating Visual Proof...")
-    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+    fig, axes = plt.subplots(1, 3, figsize=(22, 7))
+    
+    # Add a massive main title
+    fig.suptitle("Zero-Shot Generalization & Automated Boundary Refinement (DeepGlobe)", 
+                 fontsize=22, fontweight='bold', y=1.02)
 
     # 1. Raw Image
     axes[0].imshow(raw_img_np)
-    axes[0].set_title("1. Raw DeepGlobe Image")
+    axes[0].set_title("1. Raw Unlabeled Image", fontsize=16, fontweight='bold', pad=15)
     axes[0].axis('off')
 
     # 2. Swin-Unet Rough Mask + Bounding Box
     axes[1].imshow(raw_img_np)
-    show_mask(target_mask, axes[1], color=np.array([1, 0, 0, 0.5])) # Red rough mask
+    show_mask(target_mask, axes[1], color=np.array([1, 0, 0, 0.5])) # Red mask
     show_box(input_box, axes[1])
-    axes[1].set_title("2. Swin-Unet AI (Location Intel)")
+    axes[1].set_title("2. Swin-Unet Spatial Intel (Water)", fontsize=16, fontweight='bold', pad=15)
     axes[1].axis('off')
 
     # 3. SAM Perfect Boundary
     axes[2].imshow(raw_img_np)
-    show_mask(sam_mask, axes[2], color=np.array([0, 1, 0, 0.5])) # Green perfect mask
-    axes[2].set_title("3. SAM Zero-Shot Refinement")
+    show_mask(sam_mask, axes[2], color=np.array([0, 1, 0, 0.5])) # Green mask
+    axes[2].set_title("3. SAM Zero-Shot Refinement", fontsize=16, fontweight='bold', pad=15)
     axes[2].axis('off')
 
+    # --- ADD THE LEGEND ---
+    red_patch = mpatches.Patch(color=(1, 0, 0, 0.5), label='Swin-Unet Prediction (Class 13/14/15)')
+    green_patch = mpatches.Patch(color=(0, 1, 0, 0.5), label='SAM Pixel-Perfect Boundary')
+    box_patch = mpatches.Patch(edgecolor='green', facecolor='none', linewidth=2, label='Swin-Unet Bounding Box Prompt')
+    
+    fig.legend(handles=[red_patch, box_patch, green_patch], 
+               loc="lower center", ncol=3, fontsize=14, bbox_to_anchor=(0.5, -0.05))
+
     plt.tight_layout()
-    plt.savefig("results/DeepGlobe_SAM_Generalization.png", dpi=200)
+    plt.savefig("results/DeepGlobe_SAM_Generalization_Presentation.png", dpi=300, bbox_inches='tight')
     plt.close()
-    print("Done! Saved to results/DeepGlobe_SAM_Generalization.png")
+    print("Done! Saved to results/DeepGlobe_SAM_Generalization_Presentation.png")
 
 if __name__ == "__main__":
     run_generalization()
