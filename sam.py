@@ -16,7 +16,7 @@ from segment_anything import sam_model_registry, SamPredictor
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # --- PATHS ---
-DEEPGLOBE_TEST_IMG = "/home/jayadeepj/Desktop/Urbanlens/data/test/855_sat.jpg" 
+DEEPGLOBE_TEST_IMG = "/home/jayadeepj/Desktop/Urbanlens/data/test/848780_sat.jpg" 
 DEEPGLOBE_TEST_MASK = DEEPGLOBE_TEST_IMG.replace("_sat.jpg", "_mask.png") 
 
 SWIN_CKPT = "checkpoints/Albumented_swin_gpu_gid_latest.pth"
