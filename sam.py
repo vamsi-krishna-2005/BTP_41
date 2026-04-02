@@ -18,7 +18,7 @@ from segment_anything import sam_model_registry, SamPredictor
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # --- PATHS ---
-DEEPGLOBE_TEST_IMG = "/home/jayadeepj/Desktop/Urbanlens/data/test/926551_sat.jpg" 
+DEEPGLOBE_TEST_IMG = "/home/jayadeepj/Desktop/Urbanlens/data/test/855_sat.jpg" 
 # DeepGlobe masks usually share the same ID but end in _mask.png
 DEEPGLOBE_TEST_MASK = DEEPGLOBE_TEST_IMG.replace("_sat.jpg", "_mask.png") 
 
