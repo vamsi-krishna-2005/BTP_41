@@ -28,7 +28,7 @@ SAM_CKPT = "sam_vit_h_4b8939.pth"
 # THE DYNAMIC FEATURE SELECTOR (Change this to test different things!)
 # Options: "Water", "Shrub Land", "Urban Res.", "Arbor Woodland", etc.
 # =========================================================================
-TARGET_FEATURE = "Shrub Land" 
+TARGET_FEATURE = "River" 
 
 # --- GID-15 CLASSES & COLORS ---
 CLASS_NAMES = {
