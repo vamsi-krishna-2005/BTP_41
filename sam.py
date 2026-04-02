@@ -137,7 +137,7 @@ def run_generalization():
 
     # --- ROW 2: THE AUTOMATION PIPELINE ---
     axes[1, 0].imshow(target_mask, cmap='gray')
-    axes[1, 0].set_title("4. Isolated Prediction (Water Only)", fontsize=18, fontweight='bold', pad=15)
+    axes[1, 0].set_title("4. Isolated Prediction (Agriculture Only)", fontsize=18, fontweight='bold', pad=15)
     axes[1, 0].axis('off')
 
     axes[1, 1].imshow(raw_img_np)
