@@ -10,3 +10,4 @@ env/
 env_*/
 .env
 *.log
+*.pth
