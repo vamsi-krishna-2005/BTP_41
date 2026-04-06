@@ -30,7 +30,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print("Loading Swin-Unet...")
 model = SwinUNet().to(device)
-model.load_state_dict(torch.load("checkpoints/swin_gpu_gid_latest.pth", map_location=device)["state_dict"])
+model.load_state_dict(torch.load("checkpoints/Albumented_swin_gpu_gid_latest.pth", map_location=device)["state_dict"])
 model.eval()
 
 transform = A.Compose([
