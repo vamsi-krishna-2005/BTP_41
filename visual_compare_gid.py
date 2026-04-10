@@ -77,8 +77,8 @@ def generate_report(idx=0):
     gaf_s = calculate_gaf(out_s)
 
     # Note: mask needs to be on device for mIoU
-    iou_u = get_miou(out_u, mask.unsqueeze(0).to(device))
-    iou_s = get_miou(out_s, mask.unsqueeze(0).to(device))
+    iou_u = get_miou(out_u, mask.unsqueeze(0).to(device), n_classes=16)
+    iou_s = get_miou(out_s, mask.unsqueeze(0).to(device), n_classes=16)
 
     # --- Visualization ---
     fig, axes = plt.subplots(1, 4, figsize=(20, 6))
